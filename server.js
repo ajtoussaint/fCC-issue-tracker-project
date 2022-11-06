@@ -24,21 +24,22 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //Sample front-end
 app.route('/:project/')
   .get(function (req, res) {
+    console.log("sample front-end routed");
     res.sendFile(process.cwd() + '/views/issue.html');
   });
-
 //Index page (static HTML)
 app.route('/')
   .get(function (req, res) {
     res.sendFile(process.cwd() + '/views/index.html');
   });
 
+//Routing for API
+apiRoutes(app);
+
 //For FCC testing purposes
 fccTestingRoutes(app);
 
-//Routing for API 
-apiRoutes(app);  
-    
+
 //404 Not Found Middleware
 app.use(function(req, res, next) {
   res.status(404)
