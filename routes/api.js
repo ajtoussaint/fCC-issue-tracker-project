@@ -64,12 +64,18 @@ module.exports = function (app) {
 
       .get(function (req, res){
         let project = req.params.project;
-        console.log("routed get " + project);
-        res.send(project);
+
       })
 
       .post(function (req, res){
         let project = req.params.project;
+        console.log("routed post for project:" + project);
+        console.log(
+          "title:",req.body.issue_title,
+          "text:", req.body.issue_text,
+          "created:", Date(),
+          "updated:",Date(),
+          "author:",req.body.created_by);
 
       })
 
