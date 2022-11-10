@@ -20,7 +20,6 @@ suite('Functional Tests', function(done) {
         status_text:"open"
       })
       .end(function (err, res){
-        console.log(res.body);
         assert.equal(res.status, 200, "response not ok");
         assert.equal(res.type, "application/json", "response not JSON");
         assert.equal(res.body.issue_title, "chai_test_issue", "title incorrect");
@@ -52,8 +51,8 @@ suite('Functional Tests', function(done) {
         assert.equal(res.body.issue_title, "chai_test_issue", "title incorrect");
         assert.equal(res.body.issue_text, "chai test text", "text incorrect");
         assert.equal(res.body.created_by, "tester", "creator incorrect");
-        assert.equal(res.body.assigned_to, undefined, "assigned_to should be blank")
-        assert.equal(res.body.status_text, undefined, "status should be blank");
+        assert.equal(res.body.assigned_to, (undefined || ""), "assigned_to should be blank")
+        assert.equal(res.body.status_text, (undefined || ""), "status should be blank");
         done();
       });
 
@@ -227,12 +226,12 @@ suite('Functional Tests', function(done) {
           });
       });
 
-      console.log("\n\n\n");
+
   });
 
   //Update an issue with an invalid _id: PUT request to /api/issues/{project}
   test("Update an issue with an invalid _id PUT", function(done){
-    console.log("\n\n\n");
+
     chai
       .request(server)
       .post('/api/issues/apitest')
@@ -250,7 +249,6 @@ suite('Functional Tests', function(done) {
             issue_title:"updated chai test title"
           })
           .end(function (err, newRes){
-            console.log(newRes.body.error == 'could not update');
             assert.equal(newRes.status, 200, "response not ok");
             assert.equal(newRes.type, "application/json", "response not JSON");
             assert.equal(newRes.body.error, 'could not update', "no error recieved");
@@ -277,7 +275,6 @@ suite('Functional Tests', function(done) {
             _id:res.body._id
           })
           .end(function (err, newRes){
-            console.log("BODY: ", newRes.body);
             assert.equal(newRes.status, 200, "response not ok");
             assert.equal(newRes.type, "application/json", "response not JSON");
             assert.equal(newRes.body.result, "successfully deleted");
@@ -290,26 +287,15 @@ suite('Functional Tests', function(done) {
   test("Delete an issue with invalid _id DELETE", function(done){
     chai
       .request(server)
-      .post('/api/issues/apitest')
-      .send({
-        issue_title:"chai_test_issue",
-        issue_text:"chai test text",
-        created_by:"tester"
-      })
+      .delete('/api/issues/apitest')
+      .send({ _id: '5f665eb46e296f6b9b6a504d', issue_text: 'New Issue Text' })
       .end(function (err, res){
-        chai
-          .request(server)
-          .delete('/api/issues/apitest')
-          .send({
-            _id:"chicken"
-          })
-          .end(function (err, newRes){
-            assert.equal(newRes.status, 200, "response not ok");
-            assert.equal(newRes.type, "application/json", "response not JSON");
-            assert.equal(newRes.body.error, "could not delete");
-            done();
-          });
-      });
+        assert.equal(res.status, 200, "response not ok");
+        assert.equal(res.type, "application/json", "response not JSON");
+        assert.isObject(res.body);
+        assert.deepEqual(res.body,{ error: 'could not delete', _id: '5f665eb46e296f6b9b6a504d'});
+        done();
+      })
   });
   //Delete an issue with missing _id: DELETE request to /api/issues/{project}
   test("Delete an issue with missing _id DELETE", function(done){
@@ -336,5 +322,23 @@ suite('Functional Tests', function(done) {
           });
       });
   });
+
+  //Additional test to help with fCC debug
+  test("Wish 15", function(done){
+    chai
+      .request(server)
+      .put('/api/issues/fcc-project')
+      .send({
+        _id:"5f665eb46e296f6b9b6a504d", 
+        issue_text:"New Issue Text"
+      })
+      .end(function (err, res){
+        assert.equal(res.status, 200, "no ok");
+        assert.equal(res.type, "applicaiton/json", "no JSON");
+        assert.isObject(res.body);
+        assert.deepEqual(res.body, {result: 'successfully updated', _id: "5f665eb46e296f6b9b6a504d"});
+        done();
+      })
+  })
 
 });

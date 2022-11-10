@@ -23,8 +23,8 @@ module.exports = function (app) {
       project: project,
       issue_title: dataObject.issue_title,
       issue_text: dataObject.issue_text,
-      created_on: Date(),
-      updated_on: Date(),
+      created_on: (new Date()).toISOString(),
+      updated_on: (new Date()).toISOString(),
       created_by: dataObject.created_by,
       assigned_to: dataObject.assigned_to,
       open:true,
@@ -39,8 +39,8 @@ module.exports = function (app) {
 
   function formatData(rawData) {
     let result = {
-      assigned_to: rawData.assigned_to,
-      status_text: rawData.status_text,
+      assigned_to: rawData.assigned_to ? rawData.assigned_to : "",
+      status_text: rawData.status_text ? rawData.status_text : "",
       open: rawData.open,
       _id: rawData.id,
       issue_title: rawData.issue_title,
@@ -78,16 +78,6 @@ module.exports = function (app) {
       .post(function (req, res){
         let project = req.params.project;
         console.log("routed post for project:" + project);
-        /*console.log(
-          "project",project,
-          "title:",req.body.issue_title,
-          "text:", req.body.issue_text,
-          "created:", Date(),
-          "updated:",Date(),
-          "author:",req.body.created_by,
-          "assigned_to",req.body.assigned_to,
-          "status_text", req.body.status_text,
-          "open",true);*/
 
           //make sure all fields are filled out
           if(req.body.issue_title == undefined || req.body.issue_text == undefined || req.body.created_by == undefined ){
@@ -99,7 +89,7 @@ module.exports = function (app) {
                 console.log("missing done()");
               }
               Issue.findById(data._id, function(err,issue) {
-                if(err){return next(err);}
+                if(err){res.json({error: 'could not post'});}
                 res.json(formatData(issue));
               })
             })
@@ -108,37 +98,36 @@ module.exports = function (app) {
 
       .put(function (req, res){
         let project = req.params.project;
-        if(req.body._id == undefined){
+        if(!req.body._id){
           res.json({ error: 'missing _id' });
-        }else if(req.body.issue_title == undefined
-              && req.body.issue_text == undefined
-              && req.body.created_by == undefined
-              && req.body.assigned_to == undefined
-              && req.body.status_text == undefined
-              && req.body.open != false){
-                console.log("no fields to update");
-          res.json({ error: 'no update field(s) sent', '_id': req.body._id })
         }else{
-
           Issue.findById(req.body._id, (err, data) => {
             if(err){
-              res.json({ error: 'could not update', '_id': req.body._id });
+              res.json({ error: 'could not update', _id: req.body._id });
             }else{
-              //make the update using data object
-              data.issue_title = req.body.issue_title == (undefined || "") ? data.issue_title : req.body.issue_title;
-              data.issue_text = req.body.issue_text == (undefined || "") ? data.issue_text : req.body.issue_text;
-              data.created_by = req.body.created_by == (undefined || "") ? data.issue_title : req.body.created_by;
-              data.assigned_to = req.body.assigned_to == (undefined || "") ? data.assigned_to : req.body.assigned_to;
-              data.status_text = req.body.status_text ==(undefined || "") ? data.status_text : req.body.status_text;
-              data.open = !req.body.open;
-              data.updated_on = Date();
-              data.save((err, updatedData) => {
-                console.log("could not update: " + req.body._id);
-                if(err){console.log(err);}
-                err ?
-                res.json({ error: 'could not update', '_id': req.body._id }):
-                res.json({result:"successfully updated",_id: req.body._id});
+                if((!req.body.issue_title)
+              && (!req.body.issue_text)
+              && (!req.body.created_by)
+              && (!req.body.assigned_to)
+              && (!req.body.status_text)
+              && (!req.body.open)){
+                res.json({ error: 'no update field(s) sent', _id: req.body._id })
+              }else{
+                  //make the update using data object
+                data.issue_title = !req.body.issue_title ? data.issue_title : req.body.issue_title;
+                data.issue_text = !req.body.issue_text ? data.issue_text : req.body.issue_text;
+                data.created_by = !req.body.created_by ? data.created_by : req.body.created_by;
+                data.assigned_to = !req.body.assigned_to ? data.assigned_to : req.body.assigned_to;
+                data.status_text = !req.body.status_text ? data.status_text : req.body.status_text;
+                data.open = !req.body.open;
+                data.updated_on = (new Date()).toISOString();
+                data.save((err, updatedData) => {
+                  if(err){console.log(err);}
+                  err ?
+                  res.json({ error: 'could not update', _id: req.body._id }):
+                  res.json({result:"successfully updated", _id: req.body._id});
               })
+              }
             }
           })
         }
@@ -147,14 +136,20 @@ module.exports = function (app) {
 
       .delete(function (req, res){
         let project = req.params.project;
+        
         if(req.body._id == undefined){
           res.json({error: 'missing _id'});
         }else{
-          Issue.findByIdAndRemove(req.body._id, (err,data) => {
+          Issue.deleteOne({_id: req.body._id} , (err,data) => {
+            console.log("deleting one: ", {_id: req.body._id})
             if(err){
-              res.json({error: 'could not delete', _id: req.body._id});
+              res.json({error: 'could not delete',_id: req.body._id});
             }else{
-              res.json({result:"successfully deleted",_id: req.body._id})
+              if(data.deletedCount < 1){
+                res.json({error: 'could not delete',_id: req.body._id});
+              }else{
+                res.json({result:'successfully deleted', _id: req.body._id})
+              }
             }
           });
         }

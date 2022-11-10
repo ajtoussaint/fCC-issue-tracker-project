@@ -24,7 +24,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //Sample front-end
 app.route('/:project/')
   .get(function (req, res) {
-    console.log("sample front-end routed");
     res.sendFile(process.cwd() + '/views/issue.html');
   });
 //Index page (static HTML)
