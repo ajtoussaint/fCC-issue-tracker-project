@@ -28,7 +28,7 @@ module.exports = function (app) {
       created_by: dataObject.created_by,
       assigned_to: dataObject.assigned_to,
       open:true,
-      stauts_text: dataObject.status_text
+      status_text: dataObject.status_text
     });
     myIssue.save((err, data) =>{
       err?
@@ -52,13 +52,6 @@ module.exports = function (app) {
     return result
   };
 
-  /*const findByProject = (projectName, done) =>{
-    Issue.find({project:projectName}, (err,data) => {
-      err ?
-      done(err) :
-      done(null,data);
-    })
-  };*/
 
 
     app.route('/api/issues/:project')
@@ -80,25 +73,12 @@ module.exports = function (app) {
             res.json(dataArr);
           }
         })
-        /*
-        findByProject(project, function(err, data){
-          if(err){return next(err);}
-          if(!data){
-            console.log("missing done()");
-            return next()
-          }
-          let dataArr = []
-          data.forEach( i => {
-            dataArr.push(formatData(i))
-          })
-          res.json(dataArr);
-        })*/
       })//end get
 
       .post(function (req, res){
         let project = req.params.project;
         console.log("routed post for project:" + project);
-        console.log(
+        /*console.log(
           "project",project,
           "title:",req.body.issue_title,
           "text:", req.body.issue_text,
@@ -107,54 +87,56 @@ module.exports = function (app) {
           "author:",req.body.created_by,
           "assigned_to",req.body.assigned_to,
           "status_text", req.body.status_text,
-          "open",true);
+          "open",true);*/
 
           //make sure all fields are filled out
-          if(req.body.issue_title == "" || req.body.issue_text == "" || req.body.created_by == "" ){
+          if(req.body.issue_title == undefined || req.body.issue_text == undefined || req.body.created_by == undefined ){
             res.json({ error: 'required field(s) missing' });
+          }else{
+            createAndSaveIssue(project, req.body, function(err,data) {
+              if(err){console.log("MONGOOSE_ERROR", err)}
+              if(!data){
+                console.log("missing done()");
+              }
+              Issue.findById(data._id, function(err,issue) {
+                if(err){return next(err);}
+                res.json(formatData(issue));
+              })
+            })
           }
-
-        createAndSaveIssue(project, req.body, function(err,data) {
-          if(err){return next(err);}
-          if(!data){
-            console.log("missing done()");
-            return next()
-          }
-          Issue.findById(data._id, function(err,issue) {
-            if(err){return next(err);}
-            res.json(formatData(issue));
-          })
-        })
-
       })//end post
 
       .put(function (req, res){
         let project = req.params.project;
-        if(req.body._id == ""){
+        if(req.body._id == undefined){
           res.json({ error: 'missing _id' });
-        }else if(req.body.issue_title == ""
-              && req.body.issue_text == ""
-              && req.body.created_by == ""
-              && req.body.assigned_to ==""
-              && req.body.status_text == ""
-              && req.body.open == false){
+        }else if(req.body.issue_title == undefined
+              && req.body.issue_text == undefined
+              && req.body.created_by == undefined
+              && req.body.assigned_to == undefined
+              && req.body.status_text == undefined
+              && req.body.open != false){
+                console.log("no fields to update");
           res.json({ error: 'no update field(s) sent', '_id': req.body._id })
         }else{
+
           Issue.findById(req.body._id, (err, data) => {
             if(err){
-              res.json({ error: 'could not update', '_id': req.body_id });
+              res.json({ error: 'could not update', '_id': req.body._id });
             }else{
               //make the update using data object
-              data.issue_title = req.body.issue_title == "" ? data.issue_title : req.body.issue_title;
-              data.issue_text = req.body.issue_text == "" ? data.issue_text : req.body.issue_text;
-              data.created_by = req.body.created_by == "" ? data.issue_title : req.body.created_by;
-              data.assigned_to = req.body.assigned_to == "" ? data.assigned_to : req.body.assigned_to;
-              data.status_text = req.body.status_text == "" ? data.status_text : req.body.status_text;
+              data.issue_title = req.body.issue_title == (undefined || "") ? data.issue_title : req.body.issue_title;
+              data.issue_text = req.body.issue_text == (undefined || "") ? data.issue_text : req.body.issue_text;
+              data.created_by = req.body.created_by == (undefined || "") ? data.issue_title : req.body.created_by;
+              data.assigned_to = req.body.assigned_to == (undefined || "") ? data.assigned_to : req.body.assigned_to;
+              data.status_text = req.body.status_text ==(undefined || "") ? data.status_text : req.body.status_text;
               data.open = !req.body.open;
               data.updated_on = Date();
               data.save((err, updatedData) => {
+                console.log("could not update: " + req.body._id);
+                if(err){console.log(err);}
                 err ?
-                res.json({ error: 'could not update', '_id': req.body_id }):
+                res.json({ error: 'could not update', '_id': req.body._id }):
                 res.json({result:"successfully updated",_id: req.body._id});
               })
             }
@@ -165,7 +147,7 @@ module.exports = function (app) {
 
       .delete(function (req, res){
         let project = req.params.project;
-        if(req.body._id == ""){
+        if(req.body._id == undefined){
           res.json({error: 'missing _id'});
         }else{
           Issue.findByIdAndRemove(req.body._id, (err,data) => {

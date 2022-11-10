@@ -20,6 +20,7 @@ suite('Functional Tests', function(done) {
         status_text:"open"
       })
       .end(function (err, res){
+        console.log(res.body);
         assert.equal(res.status, 200, "response not ok");
         assert.equal(res.type, "application/json", "response not JSON");
         assert.equal(res.body.issue_title, "chai_test_issue", "title incorrect");
@@ -51,8 +52,8 @@ suite('Functional Tests', function(done) {
         assert.equal(res.body.issue_title, "chai_test_issue", "title incorrect");
         assert.equal(res.body.issue_text, "chai test text", "text incorrect");
         assert.equal(res.body.created_by, "tester", "creator incorrect");
-        assert.equal(res.body.assigned_to, "", "assigned_to should be blank")
-        assert.equal(res.body.status_text, "", "status should be blank");
+        assert.equal(res.body.assigned_to, undefined, "assigned_to should be blank")
+        assert.equal(res.body.status_text, undefined, "status should be blank");
         done();
       });
 
@@ -75,6 +76,7 @@ suite('Functional Tests', function(done) {
       });
 
   });
+
   //View issues on a project: GET request to /api/issues/{project}
   test('View issues on a project GET', function(done){
     chai
@@ -121,38 +123,218 @@ suite('Functional Tests', function(done) {
 
   //Update one field on an issue: PUT request to /api/issues/{project}
   test('Update one field on an issue PUT', function(done){
-
+    chai
+      .request(server)
+      .post('/api/issues/apitest')
+      .send({
+        issue_title:"chai_test_issue",
+        issue_text:"chai test text",
+        created_by:"tester"
+      })
+      .end(function (err, res){
+        chai
+          .request(server)
+          .put('/api/issues/apitest')
+          .send({
+            _id:res.body._id,
+            issue_title:"updated chai test title"
+          })
+          .end(function (err, newRes){
+            assert.equal(newRes.status, 200, "response not ok");
+            assert.equal(newRes.type, "application/json", "response not JSON");
+            assert.equal(newRes.body.result, "successfully updated", "title has not updated");
+            done();
+          });
+      });
   });
+
   //Update multiple fields on an issue: PUT request to /api/issues/{project}
   test('Update multiple fields on an issue PUT', function(done){
-
+    chai
+      .request(server)
+      .post('/api/issues/apitest')
+      .send({
+        issue_title:"chai_test_issue",
+        issue_text:"chai test text",
+        created_by:"tester"
+      })
+      .end(function (err, res){
+        chai
+          .request(server)
+          .put('/api/issues/apitest')
+          .send({
+            _id:res.body._id,
+            issue_title:"updated chai test title",
+            issue_text:"updated chai test text"
+          })
+          .end(function (err, newRes){
+            assert.equal(newRes.status, 200, "response not ok");
+            assert.equal(newRes.type, "application/json", "response not JSON");
+            assert.equal(newRes.body.result, "successfully updated", "title and text have not updated");
+            done();
+          });
+      });
   });
 
   //Update an issue with missing _id: PUT request to /api/issues/{project}
   test('Update an issue with missing _id PUT', function(done){
-
+    chai
+      .request(server)
+      .post('/api/issues/apitest')
+      .send({
+        issue_title:"chai_test_issue",
+        issue_text:"chai test text",
+        created_by:"tester"
+      })
+      .end(function (err, res){
+        chai
+          .request(server)
+          .put('/api/issues/apitest')
+          .send({
+            issue_title:"updated chai test title",
+            issue_text:"updated chai test text"
+          })
+          .end(function (err, newRes){
+            assert.equal(newRes.status, 200, "response not ok");
+            assert.equal(newRes.type, "application/json", "response not JSON");
+            assert.equal(newRes.body.error, 'missing _id', "title and text have not updated");
+            done();
+          });
+      });
   });
   //Update an issue with no fields to update: PUT request to /api/issues/{project}
   test('Update an issue with no fields to update PUT', function(done){
+    chai
+      .request(server)
+      .post('/api/issues/apitest')
+      .send({
+        issue_title:"chai_test_issue",
+        issue_text:"chai test text",
+        created_by:"tester"
+      })
+      .end(function (err, res){
+        chai
+          .request(server)
+          .put('/api/issues/apitest')
+          .send({
+            _id:res.body._id
+          })
+          .end(function (err, newRes){
+            assert.equal(newRes.status, 200, "response not ok");
+            assert.equal(newRes.type, "application/json", "response not JSON");
+            assert.equal(newRes.body.error, 'no update field(s) sent');
+            done();
+          });
+      });
 
+      console.log("\n\n\n");
   });
 
   //Update an issue with an invalid _id: PUT request to /api/issues/{project}
   test("Update an issue with an invalid _id PUT", function(done){
-
+    console.log("\n\n\n");
+    chai
+      .request(server)
+      .post('/api/issues/apitest')
+      .send({
+        issue_title:"chai_test_issue",
+        issue_text:"chai test text",
+        created_by:"tester"
+      })
+      .end(function (err, res){
+        chai
+          .request(server)
+          .put('/api/issues/apitest')
+          .send({
+            _id:"chicken",
+            issue_title:"updated chai test title"
+          })
+          .end(function (err, newRes){
+            console.log(newRes.body.error == 'could not update');
+            assert.equal(newRes.status, 200, "response not ok");
+            assert.equal(newRes.type, "application/json", "response not JSON");
+            assert.equal(newRes.body.error, 'could not update', "no error recieved");
+            done();
+          });
+      });
   });
 
   //Delete an issue: DELETE request to /api/issues/{project}
   test("Delete an issue DELETE", function(done){
-
+    chai
+      .request(server)
+      .post('/api/issues/apitest')
+      .send({
+        issue_title:"chai_test_issue",
+        issue_text:"chai test text",
+        created_by:"tester"
+      })
+      .end(function (err, res){
+        chai
+          .request(server)
+          .delete('/api/issues/apitest')
+          .send({
+            _id:res.body._id
+          })
+          .end(function (err, newRes){
+            console.log("BODY: ", newRes.body);
+            assert.equal(newRes.status, 200, "response not ok");
+            assert.equal(newRes.type, "application/json", "response not JSON");
+            assert.equal(newRes.body.result, "successfully deleted");
+            done();
+          });
+      });
   });
 
   //Delete an issue with an invalid _id: DELETE request to /api/issues/{project}
   test("Delete an issue with invalid _id DELETE", function(done){
-
+    chai
+      .request(server)
+      .post('/api/issues/apitest')
+      .send({
+        issue_title:"chai_test_issue",
+        issue_text:"chai test text",
+        created_by:"tester"
+      })
+      .end(function (err, res){
+        chai
+          .request(server)
+          .delete('/api/issues/apitest')
+          .send({
+            _id:"chicken"
+          })
+          .end(function (err, newRes){
+            assert.equal(newRes.status, 200, "response not ok");
+            assert.equal(newRes.type, "application/json", "response not JSON");
+            assert.equal(newRes.body.error, "could not delete");
+            done();
+          });
+      });
   });
   //Delete an issue with missing _id: DELETE request to /api/issues/{project}
   test("Delete an issue with missing _id DELETE", function(done){
+    chai
+      .request(server)
+      .post('/api/issues/apitest')
+      .send({
+        issue_title:"chai_test_issue",
+        issue_text:"chai test text",
+        created_by:"tester"
+      })
+      .end(function (err, res){
+        chai
+          .request(server)
+          .delete('/api/issues/apitest')
+          .send({
 
+          })
+          .end(function (err, newRes){
+            assert.equal(newRes.status, 200, "response not ok");
+            assert.equal(newRes.type, "application/json", "response not JSON");
+            assert.equal(newRes.body.error, 'missing _id');
+            done();
+          });
+      });
   });
+
 });
