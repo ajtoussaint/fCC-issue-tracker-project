@@ -50,6 +50,14 @@ module.exports = function (app) {
       updated_on: rawData.updated_on
     }
     return result
+  };
+
+  const findByProject = (projectName, done) =>{
+    Issue.find({project:projectName}, (err,data) => {
+      err ?
+      done(err) :
+      done(null,data);
+    })
   }
 
 
@@ -58,7 +66,18 @@ module.exports = function (app) {
 
       .get(function (req, res){
         let project = req.params.project;
-
+        findByProject(project, function(err, data){
+          if(err){return next(err);}
+          if(!data){
+            console.log("missing done()");
+            return next()
+          }
+          let dataArr = []
+          data.forEach( i => {
+            dataArr.push(formatData(i))
+          })
+          res.json(dataArr);
+        })
       })
 
       .post(function (req, res){
@@ -74,6 +93,12 @@ module.exports = function (app) {
           "assigned_to",req.body.assigned_to,
           "status_text", req.body.status_text,
           "open",true);
+
+          //make sure all fields are filled out
+          if(req.body.issue_title == "" || req.body.issue_text == "" || req.body.created_by == "" ){
+            res.json({ error: 'required field(s) missing' });
+          }
+
         createAndSaveIssue(project, req.body, function(err,data) {
           if(err){return next(err);}
           if(!data){
