@@ -58,8 +58,7 @@ module.exports = function (app) {
       done(err) :
       done(null,data);
     })
-  }
-
+  };
 
 
     app.route('/api/issues/:project')
@@ -115,11 +114,39 @@ module.exports = function (app) {
 
       .put(function (req, res){
         let project = req.params.project;
+        Issue.findById(req.body._id, (err, data) => {
+          if(err){
+            console.log(err);
+          }else{
+            //make the update using data object
+            data.issue_title = req.body.issue_title == "" ? data.issue_title : req.body.issue_title;
+            data.issue_text = req.body.issue_text == "" ? data.issue_text : req.body.issue_text;
+            data.created_by = req.body.created_by == "" ? data.issue_title : req.body.created_by;
+            data.assigned_to = req.body.assigned_to == "" ? data.assigned_to : req.body.assigned_to;
+            data.status_text = req.body.status_text == "" ? data.status_text : req.body.status_text;
+            data.open = !req.body.open;
+            data.updated_on = Date();
+            data.save((err, updatedData) => {
+              err ?
+              console.log(err):
+              res.json({result:"successfully updated",_id: req.body._id});
+            })
+          }
+        })
+
+
 
       })
 
       .delete(function (req, res){
         let project = req.params.project;
+        Issue.findByIdAndRemove(req.body._id, (err,data) => {
+          if(err){
+            console.log(err);
+          }else{
+            res.json({result:"successfully deleted",_id: req.body._id})
+          }
+        })
 
       });
 
