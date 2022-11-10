@@ -323,22 +323,4 @@ suite('Functional Tests', function(done) {
       });
   });
 
-  //Additional test to help with fCC debug
-  test("Wish 15", function(done){
-    chai
-      .request(server)
-      .put('/api/issues/fcc-project')
-      .send({
-        _id:"5f665eb46e296f6b9b6a504d", 
-        issue_text:"New Issue Text"
-      })
-      .end(function (err, res){
-        assert.equal(res.status, 200, "no ok");
-        assert.equal(res.type, "applicaiton/json", "no JSON");
-        assert.isObject(res.body);
-        assert.deepEqual(res.body, {result: 'successfully updated', _id: "5f665eb46e296f6b9b6a504d"});
-        done();
-      })
-  })
-
 });

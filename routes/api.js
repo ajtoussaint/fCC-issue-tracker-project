@@ -52,8 +52,6 @@ module.exports = function (app) {
     return result
   };
 
-
-
     app.route('/api/issues/:project')
 
       .get(function (req, res){
@@ -77,8 +75,6 @@ module.exports = function (app) {
 
       .post(function (req, res){
         let project = req.params.project;
-        console.log("routed post for project:" + project);
-
           //make sure all fields are filled out
           if(req.body.issue_title == undefined || req.body.issue_text == undefined || req.body.created_by == undefined ){
             res.json({ error: 'required field(s) missing' });
@@ -98,11 +94,24 @@ module.exports = function (app) {
 
       .put(function (req, res){
         let project = req.params.project;
+        console.log("routed PUT for project " + project);
+        console.log(req.body);
         if(!req.body._id){
+          console.log("NO ID: ",  req.body._id);
           res.json({ error: 'missing _id' });
         }else{
-          Issue.findById(req.body._id, (err, data) => {
-            if(err){
+          if((!req.body.issue_title)
+              && (!req.body.issue_text)
+              && (!req.body.created_by)
+              && (!req.body.assigned_to)
+              && (!req.body.status_text)
+              && (!req.body.open)){
+              console.log("NO DATA");
+              res.json({ error: 'no update field(s) sent', _id: req.body._id })
+              }else{
+                Issue.findById(req.body._id, (err, data) => {
+            if(err || !data){
+              console.log("EITHER ERROR OR NO DATA: ", req.body);
               res.json({ error: 'could not update', _id: req.body._id });
             }else{
                 if((!req.body.issue_title)
@@ -111,9 +120,11 @@ module.exports = function (app) {
               && (!req.body.assigned_to)
               && (!req.body.status_text)
               && (!req.body.open)){
+                console.log("NO DATA SENT: ", req.body);
                 res.json({ error: 'no update field(s) sent', _id: req.body._id })
               }else{
-                  //make the update using data object
+                console.log("updating...")  
+                //make the update using data object
                 data.issue_title = !req.body.issue_title ? data.issue_title : req.body.issue_title;
                 data.issue_text = !req.body.issue_text ? data.issue_text : req.body.issue_text;
                 data.created_by = !req.body.created_by ? data.created_by : req.body.created_by;
@@ -130,6 +141,7 @@ module.exports = function (app) {
               }
             }
           })
+              }
         }
 
       })//end of put
