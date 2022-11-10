@@ -18,15 +18,17 @@ module.exports = function (app) {
 
   let Issue = mongoose.model("Issue",issueSchema);
 
-  const createAndSaveIssue = (done) =>{
+  const createAndSaveIssue = (project, dataObject, done) =>{
     let myIssue = new Issue({
-      project: "test",
-      issue_title: "test_issue",
-      issue_text: "Please work",
+      project: project,
+      issue_title: dataObject.issue_title,
+      issue_text: dataObject.issue_text,
       created_on: Date(),
       updated_on: Date(),
-      created_by: "ajt",
-      open:true
+      created_by: dataObject.created_by,
+      assigned_to: dataObject.assigned_to,
+      open:true,
+      stauts_text: dataObject.status_text
     });
     myIssue.save((err, data) =>{
       err?
@@ -35,29 +37,21 @@ module.exports = function (app) {
     });
   };
 
-  console.log("routing");
+  function formatData(rawData) {
+    let result = {
+      assigned_to: rawData.assigned_to,
+      status_text: rawData.status_text,
+      open: rawData.open,
+      _id: rawData.id,
+      issue_title: rawData.issue_title,
+      issue_text: rawData.issue_text,
+      created_by: rawData.created_by,
+      created_on: rawData.created_on,
+      updated_on: rawData.updated_on
+    }
+    return result
+  }
 
-    app.route('/api/test').get(function (req,res){
-      console.log("test route entered");
-
-      createAndSaveIssue(function (err, data) {
-        if(err) {
-          return next(err);
-        }
-        if(!data){
-          console.log("Missing 'done()' argument");
-          return next()
-        }
-        Issue.findById(data._id, function (err, issue) {
-          if(err){
-            return next(err);
-          }
-          res.json(issue);
-          issue.remove();
-        })
-      })
-
-    });
 
 
     app.route('/api/issues/:project')
@@ -71,11 +65,26 @@ module.exports = function (app) {
         let project = req.params.project;
         console.log("routed post for project:" + project);
         console.log(
+          "project",project,
           "title:",req.body.issue_title,
           "text:", req.body.issue_text,
           "created:", Date(),
           "updated:",Date(),
-          "author:",req.body.created_by);
+          "author:",req.body.created_by,
+          "assigned_to",req.body.assigned_to,
+          "status_text", req.body.status_text,
+          "open",true);
+        createAndSaveIssue(project, req.body, function(err,data) {
+          if(err){return next(err);}
+          if(!data){
+            console.log("missing done()");
+            return next()
+          }
+          Issue.findById(data._id, function(err,issue) {
+            if(err){return next(err);}
+            res.json(formatData(issue));
+          })
+        })
 
       })
 
